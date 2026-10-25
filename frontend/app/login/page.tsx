@@ -1,0 +1,152 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { api, getApiErrorMessage } from '@/app/lib/axios';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      // Send login request using Axios
+      const response = await api.post('/auth/login', { email, password });
+      
+      // Support both direct properties or nested structures under response.data.data
+      const responseData = response.data.data || response.data;
+      const token = responseData.token;
+      const user = responseData.user;
+
+      if (!token || !user) {
+        throw new Error('Token or user profile missing from server response.');
+      }
+
+      // Store the token and user profile securely in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Redirect based on user role
+      if (user.role === 'ADMIN' || user.role === 'ATTORNEY') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/client/dashboard');
+      }
+      
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'An error occurred during login.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0A2647] px-4">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8">
+        
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#0A2647] text-[#C49A6C] rounded-lg font-serif text-2xl font-bold mb-3 shadow">
+            M
+          </div>
+          <h1 className="text-2xl font-serif font-bold text-[#0A2647]">MCALI LEGAL CONSULT</h1>
+          <p className="text-sm text-[#738290] mt-1">Secure Client & Attorney Portal</p>
+        </div>
+
+        {/* Error Notice */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[#738290] mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="client@legalconsult.com"
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#C49A6C] focus:border-transparent outline-none text-gray-800 text-sm transition"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[#738290]">
+                Password
+              </label>
+              <a href="/forgotten-password" className="text-xs text-[#C49A6C] hover:underline font-medium">
+                Forgot password?
+              </a>
+            </div>
+            
+            {/* Password input wrapper with Eye Icon toggle */}
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#C49A6C] focus:border-transparent outline-none text-gray-800 text-sm transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  /* Eye-Off Icon */
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  /* Eye Icon */
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-[#C49A6C] hover:bg-[#b58b5e] text-white font-medium rounded-lg shadow-md transition duration-200 disabled:opacity-50"
+          >
+            {loading ? 'Authenticating...' : 'Sign In'}
+          </button>
+        </form>
+
+        {/* Create Account Link Option */}
+        <div className="mt-6 text-center text-xs text-[#738290]">
+          Don&apos;t have an account?{' '}
+          <a href="/register" className="text-[#C49A6C] hover:underline font-semibold">
+            Create account
+          </a>
+        </div>
+
+        <div className="mt-4 text-center text-[11px] text-[#738290]">
+          Protected by 256-bit SSL Encryption & JWT Authentication
+        </div>
+      </div>
+    </div>
+  );
+}

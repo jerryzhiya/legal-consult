@@ -1,0 +1,239 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CLIENT
+  ATTORNEY
+  ADMIN
+}
+
+enum MatterStatus {
+  ACTIVE
+  IN_REVIEW
+  PENDING
+  CLOSED
+}
+
+enum DocumentType {
+  PDF
+  DOCX
+  IMAGE
+  OTHER
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model User {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  email        String  @unique
+  passwordHash String
+  fullName     String
+  role         Role    @default(CLIENT)
+  phone        String?
+
+  // Password Reset Fields
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientMatters    Matter[]      @relation("ClientMatters")
+  assignedMatters  Matter[]      @relation("AssignedAttorney")
+  uploadedDocs     Document[]    @relation("DocumentUploader")
+  sentMessages     Message[]     @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  invoices         Invoice[]
+  appointments     Appointment[]
+  auditLogs        AuditLog[]
+  tasks            Task[]
+}
+
+model Matter {
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  caseNumber         String       @unique // e.g. MC-2024-0815
+  title              String
+  practiceArea       String // e.g. Corporate Law, Estate Planning
+  status             MatterStatus @default(ACTIVE)
+  progressPercentage Int          @default(0)
+
+  clientId String @db.ObjectId
+  client   User   @relation("ClientMatters", fields: [clientId], references: [id])
+
+  attorneyId String? @db.ObjectId
+  attorney   User?   @relation("AssignedAttorney", fields: [attorneyId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? // Changed to optional (DateTime?) to prevent null errors
+
+  milestones   Milestone[]
+  documents    Document[]
+  invoices     Invoice[]
+  appointments Appointment[]
+}
+
+model Milestone {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  matterId   String    @db.ObjectId
+  matter     Matter    @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  title      String // e.g., "Intake", "Discovery", "Mediation"
+  completed  Boolean   @default(false)
+  dueDate    DateTime?
+  orderIndex Int
+}
+
+model Document {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  category  String    @default("General Upload")
+  fileUrl   String?
+  status    String    @default("PENDING")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? // Changed to optional so missing null dates won't crash Prisma
+
+  matterId String? @db.ObjectId
+  matter   Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+
+  uploaderId String? @db.ObjectId
+  uploader   User?   @relation(fields: [uploaderId], references: [id], onDelete: SetNull, name: "DocumentUploader")
+}
+
+model Invoice {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNumber String        @unique // e.g., INV-1048
+  matterId      String        @db.ObjectId
+  matter        Matter        @relation(fields: [matterId], references: [id])
+  clientId      String        @db.ObjectId
+  client        User          @relation(fields: [clientId], references: [id])
+  amount        Float // MongoDB alternative to Decimal
+  status        InvoiceStatus @default(PENDING)
+  dueDate       DateTime
+  createdAt     DateTime      @default(now())
+}
+
+model Appointment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  matterId  String?  @db.ObjectId
+  matter    Matter?  @relation(fields: [matterId], references: [id])
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  dateTime  DateTime
+  location  String // e.g. "Video Conference" or "Office Suite 400"
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  action    String // e.g. "DOWNLOAD_DOCUMENT", "PAY_INVOICE"
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @unique
+  fullName         String
+  role             String
+  email            String
+  phone            String?
+  firmName         String
+  primaryOffice    String
+  officeAddress    String
+  caseActivity     Boolean  @default(true)
+  newLeadAlerts    Boolean  @default(true)
+  billingSummaries Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model TrustTransaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  type        String // e.g., 'Client retainer', 'Filing disbursement', 'Settlement deposit'
+  clientName  String
+  matterTitle String
+  amount      Float // Positive for deposits, negative for disbursements
+  balance     Float
+  createdAt   DateTime @default(now())
+}
+
+model BillingRecord {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  recordTitle String // e.g., 'Jenkins Aultral Holding'
+  matterCode  String // e.g., '#MC-2026-092 · Corporate Law'
+  owner       String // e.g., 'Sarah Jenkins'
+  amount      Float // e.g., 12500.00
+  status      String   @default("ACTIVE") // e.g., 'ACTIVE', 'PAID', 'PENDING'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CalendarEvent {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  title      String // e.g., 'District Court Hearing (Jenkins v. Altura)'
+  category   String // e.g., 'COURT', 'MEETING', 'VIDEO'
+  date       DateTime // The scheduled date
+  timeString String // e.g., '9:00 AM'
+  location   String? // e.g., 'Courtroom 4B' or 'Conference Room 2'
+  attendee   String? // e.g., 'Priya Shah'
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Lead {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  recordTitle  String // e.g., 'Alex Morgan'
+  practiceArea String // e.g., 'Employment dispute'
+  owner        String // e.g., 'Michael Reyes'
+  status       String   @default("ACTIVE") // e.g., 'Active', 'In review', 'New'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String // e.g., 'Client Portal: Jane Smith uploaded a document...'
+  message   String // e.g., 'Related case: Jenkins v. Altura (Draft Lease)'
+  type      String // e.g., 'ALERT', 'UPDATE', 'BILLING'
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  senderId String @db.ObjectId
+  sender   User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId String @db.ObjectId
+  receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  matter    String? // Or link it via matterId if you prefer
+  time      String? // e.g., "10:00 AM" or use a DateTime
+  priority  String   @default("NORMAL") // HIGH, NORMAL, LOW
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String? @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
