@@ -136,7 +136,6 @@ export default function AdminDashboardPage() {
     };
 
     updateGreeting();
-
     fetchDashboardData();
   }, []);
 
@@ -288,10 +287,10 @@ export default function AdminDashboardPage() {
               Exit
             </button>
             <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
+              onClick={() => setSidebarOpen(true)}
               className="text-xs uppercase tracking-widest text-[#C49A6C] font-semibold border border-[#C49A6C] px-2.5 py-1.5 rounded"
             >
-              {sidebarOpen ? 'Close' : 'Menu'}
+              Menu
             </button>
           </div>
         </div>
@@ -304,11 +303,19 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Sidebar Navigation (Responsive Drawer on Mobile) */}
-      <aside className={`w-full max-h-[calc(100dvh-5rem)] overflow-y-auto lg:max-h-none lg:overflow-visible lg:sticky lg:top-0 lg:h-screen lg:w-64 bg-[#0A2647] text-white shrink-0 ${sidebarOpen ? 'block' : 'hidden'} lg:block border-r border-[#071d37] flex flex-col justify-between z-30`}>
+      {/* Mobile Sliding Backdrop Overlay */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)} 
+          className="fixed inset-0 bg-black/60 z-50 lg:hidden backdrop-blur-xs transition-opacity"
+        />
+      )}
+
+      {/* Sidebar Navigation (Sliding Drawer from Left on Mobile, Fixed Sidebar on Desktop) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#0A2647] text-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:h-screen lg:w-64 lg:shadow-none border-r border-[#071d37] flex flex-col justify-between ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div>
-          <div className="p-6 hidden lg:block border-b border-white/10">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => router.push('/')}>
+          <div className="p-6 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setSidebarOpen(false); router.push('/'); }}>
               <div className="w-9 h-9 bg-[#C49A6C] text-[#0A2647] flex items-center justify-center font-serif font-bold rounded">
                 M
               </div>
@@ -317,9 +324,16 @@ export default function AdminDashboardPage() {
                 <span className="text-[10px] uppercase tracking-widest text-[#C49A6C] block">Firm Management</span>
               </div>
             </div>
+            {/* Close Button for Mobile Drawer */}
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-gray-300 hover:text-white p-1 text-xl font-bold"
+            >
+              ✕
+            </button>
           </div>
 
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1 overflow-y-auto max-h-[calc(100dvh-13rem)] lg:max-h-none">
             {navItems.map((item) => {
               const isNotificationItem = item.name === 'Notifications';
               return (
@@ -482,7 +496,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <>
                   <div className="max-w-full overflow-x-auto">
-                    <table className="w-full text-left text-xs min-w-[480px]">
+                    <table className="w-full text-left text-xs min-w-120">
                       <thead>
                         <tr className="border-b border-gray-200 text-[#738290] uppercase">
                           <th className="pb-3 font-semibold">Matter / Client</th>
@@ -499,10 +513,10 @@ export default function AdminDashboardPage() {
                             className="cursor-pointer hover:bg-gray-50 transition"
                           >
                             <td className="py-3 pr-2">
-                              <span className="font-medium text-[#0A2647] block truncate max-w-[180px] sm:max-w-xs">{matter.title}</span>
+                              <span className="font-medium text-[#0A2647] block truncate max-w-45 sm:max-w-xs">{matter.title}</span>
                               <span className="text-[10px] text-[#738290]">#{matter.caseNumber} · {matter.practiceArea}</span>
                             </td>
-                            <td className="py-3 text-[#738290] truncate max-w-[120px]">{matter.client?.fullName || 'Assigned Client'}</td>
+                            <td className="py-3 text-[#738290] truncate max-w-30">{matter.client?.fullName || 'Assigned Client'}</td>
                             <td className="py-3">
                               <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded font-medium whitespace-nowrap">
                                 {matter.status}

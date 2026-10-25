@@ -27,7 +27,7 @@ export default function LandingPage() {
               Legal clarity for the moments that shape your future.
             </h1>
             <p className="text-gray-300 text-base sm:text-lg leading-relaxed max-w-xl">
-              MCALI pairs rigorous legal thinking with a distinctly human approach—helping individuals, families, and ambitious businesses move forward with confidence.
+              MCALI pairs rigorous legal thinking with a distinctly human approach helping individuals, families, and ambitious businesses move forward with confidence.
             </p>
             <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               <button
@@ -76,7 +76,7 @@ export default function LandingPage() {
           </p>
           <div className="pt-6">
             <blockquote className="font-serif italic text-xl text-[#0A2647] border-l-4 border-[#C49A6C] pl-6 py-2 mx-auto max-w-2xl text-left">
-              “Not just legal answers—a clear path forward.”
+              “Not just legal answers a clear path forward.”
             </blockquote>
           </div>
         </div>
