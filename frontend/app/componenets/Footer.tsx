@@ -1,10 +1,15 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function Footer() {
   const router = useRouter();
-  const currentYear = new Date().getFullYear();
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   return (
     <footer id="contact" className="bg-gray-900 text-gray-400 py-16 px-6 lg:px-12 border-t border-gray-800 font-sans">
@@ -30,9 +35,9 @@ export function Footer() {
           <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Contact</h4>
           <p className="text-sm text-gray-300">hello@mcalilegal.com</p>
           <p className="text-sm text-gray-300">+234 123 456 7894</p>
-          <p className="text-sm text-gray-300">MCAli Legal Consult,
-Plot 150, Deborah S. Aber close, 
-Durumi, Abuja.</p>
+          <p className="text-sm text-gray-300 whitespace-pre-line">
+            {`MCAli Legal Consult,\nPlot 150, Deborah S. Aber close,\nDurumi, Abuja.`}
+          </p>
         </div>
 
         {/* Quick Portal Links Column */}
@@ -40,13 +45,13 @@ Durumi, Abuja.</p>
           <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Client Portal</h4>
           <button 
             onClick={() => router.push('/login')} 
-            className="text-sm text-[#C49A6C] hover:underline block text-left"
+            className="text-sm text-[#C49A6C] hover:underline block text-left cursor-pointer"
           >
             Secure Firm Login →
           </button>
           <button 
             onClick={() => router.push('/register')} 
-            className="text-sm text-gray-400 hover:text-white block text-left transition"
+            className="text-sm text-gray-400 hover:text-white block text-left transition cursor-pointer"
           >
             Create Account
           </button>
@@ -55,9 +60,9 @@ Durumi, Abuja.</p>
       </div>
 
       {/* Bottom Legal & Copyright Bar */}
-      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-gray-800 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <span>© {currentYear} MCALI Legal Consult. All rights reserved.</span>
-        <span className="text-center sm:text-right">Attorney advertising · Privacy Policy · Terms of Service</span>
+      <div className="max-w-7xl mx-auto mt-12 pt-6 border-t border-gray-800 text-xs text-gray-500 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+        <span>© {currentYear || '2026'} MCALI Legal Consult. All rights reserved.</span>
+        <span>Attorney advertising · Privacy Policy · Terms of Service</span>
       </div>
     </footer>
   );
