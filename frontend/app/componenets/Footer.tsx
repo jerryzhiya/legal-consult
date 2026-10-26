@@ -33,8 +33,8 @@ export function Footer() {
         {/* Contact Column */}
         <div className="space-y-3">
           <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Contact</h4>
-          <p className="text-sm text-gray-300">hello@mcalilegal.com</p>
-          <p className="text-sm text-gray-300">+234 123 456 7894</p>
+          <p className="text-sm text-gray-300">mcalilegal@gmail.com</p>
+          <p className="text-sm text-gray-300">+234 703 094 5674</p>
           <p className="text-sm text-gray-300 whitespace-pre-line">
             {`MCAli Legal Consult,\nPlot 150, Deborah S. Aber close,\nDurumi, Abuja.`}
           </p>
